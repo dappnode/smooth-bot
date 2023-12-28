@@ -32,4 +32,4 @@ python twitter.py
 To learn more about Smooth, take a look at the following resources:
 
 - [SmoothAlerts](https://twitter.com/SmoothAlerts) - Twiiter Alerts for the MEV Smoothing Pool for Solo Stakers
-- [Learn Next.js](https://smooth.dappnode.io/) - Dappnode's MEV Smoothing Pool
+- [Smooth](https://smooth.dappnode.io/) - Dappnode's MEV Smoothing Pool
