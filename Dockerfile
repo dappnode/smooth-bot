@@ -1,17 +1,24 @@
-# Use an official Python runtime as a parent image
-FROM python:3.8-slim
+# Stage 1: Build stage
+FROM python:3.8-slim AS builder
 
-# Set the working directory in the container
-WORKDIR /app
+# Set the working directory in the build stage
+WORKDIR /build
 
-# Copy only the necessary files into the container
-COPY .env .
+# Copy only the necessary files for installing dependencies
 COPY requirements.txt .
 
-# Install any needed packages specified in requirements.txt
+# Install dependencies
 RUN pip install --trusted-host pypi.python.org -r requirements.txt
 
-# Copy the Python script into the container
+# Stage 2: Runtime stage
+FROM python:3.8-slim
+
+# Set the working directory in the runtime stage
+WORKDIR /app
+
+# Copy only the necessary files into the runtime stage
+COPY --from=builder /usr/local/lib/python3.8/site-packages /usr/local/lib/python3.8/site-packages
+COPY .env .
 COPY twitter.py .
 
 # Run twitter.py when the container launches

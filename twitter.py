@@ -5,6 +5,7 @@ import time
 from web3 import Web3
 from dotenv import load_dotenv
 import os
+import random  # Import the random module
 
 load_dotenv()
 
@@ -36,17 +37,19 @@ def get_block_message(block):
 
         # Check the block type
         if block_type == 'wrongfeerecipient':
-            # Post the tweet
+            # Post the tweet with some variation
             address = block['withdrawal_address']
             amount = Web3.from_wei(int(block['reward_wei']), 'ether')
-            return f"🚨❌ BANNED FROM SMOOTH ❌🚨 - {address} has been banned for sending {amount:.4f} ETH out of the pool"
+            variation = random.choice(["🚨❌", "🚫❗️", "⛔"])  # Add some random variation
+            return f"{variation} BANNED FROM SMOOTH {variation} - {address} has been banned for sending {amount:.4f} ETH out of the pool"
         elif block_type == 'okpoolproposal':
             # Convert wei to ETH
             w3 = Web3()
             reward_eth = w3.from_wei(int(reward_wei), 'ether')
 
-            # Create tweet message
-            return f"🚨 NEW BLOCK IN SMOOTH 🚨 - {reward_eth:.4f} ETH from a ☁️ Smooth Operator 😏 (Block #{block_number}, Slot #{slot})"
+            # Create tweet message with some variation
+            variation = random.choice(["🚨", "🎉", "💰"])  # Add some random variation
+            return f"{variation} NEW BLOCK IN SMOOTH {variation} - {reward_eth:.4f} ETH from a ☁️ Smooth Operator 😏 (Block #{block_number}, Slot #{slot})"
     else:
         print(f"Skipping tweet for block {block_number} (missing reward)")
         return None
