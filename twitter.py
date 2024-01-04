@@ -47,7 +47,7 @@ def get_block_message(block):
             # Post the tweet with some variation
             address = block['withdrawal_address']
             amount = Web3.from_wei(int(block['reward_wei']), 'ether')
-            variation = random.choice(["🚨❌", "🚫❗️", "⛔"])  # Add some random variation
+            variation = random.choice(["🚨❌", "🚫❗️", "⛔", "❌💔", "⚠️🔒", "🔴🚫"])
             return f"{variation} BANNED FROM SMOOTH {variation} - {address} has been banned for sending {amount:.4f} ETH out of the pool"
         elif block_type == 'okpoolproposal':
             # Convert wei to ETH
@@ -55,7 +55,7 @@ def get_block_message(block):
             reward_eth = w3.from_wei(int(reward_wei), 'ether')
 
             # Create tweet message with some variation
-            variation = random.choice(["🚨", "🎉", "💰"])  # Add some random variation
+            variation = random.choice(["🚨", "🎉", "💰", "🔥", "🌟", "👑"]) 
             return f"{variation} NEW BLOCK IN SMOOTH {variation} - {reward_eth:.4f} ETH from a ☁️ Smooth Operator 😏 (Block #{block_number}, Slot #{slot})"
     else:
         print(f"Skipping tweet for block {block_number} (missing reward)")
