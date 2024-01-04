@@ -2,7 +2,7 @@ version: "3.8"
 
 services:
   smooth-bot:
-    container_name: check-ports-service
+    container_name: smooth-bot
     image: ghcr.io/dappnode/smooth-bot:latest
     environment:
       CONSUMER_KEY: ""
