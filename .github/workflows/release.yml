@@ -26,7 +26,7 @@ jobs:
         with:
           file: Dockerfile
           push: true
-          tags: ghcr.io/${{ github.repository_owner }}/smooth-bot:${{ github.event.inputs.tag }}
+          tags: ghcr.io/${{ github.repository_owner }}/smooth-bot:latest
 
   gh-release:
     runs-on: ubuntu-latest
