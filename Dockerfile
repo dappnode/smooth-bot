@@ -18,7 +18,6 @@ WORKDIR /app
 
 # Copy only the necessary files into the runtime stage
 COPY --from=builder /usr/local/lib/python3.8/site-packages /usr/local/lib/python3.8/site-packages
-COPY .env .
 COPY twitter.py .
 
 # Run twitter.py when the container launches
