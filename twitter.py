@@ -5,7 +5,7 @@ import time
 from web3 import Web3
 from dotenv import load_dotenv
 import os
-import random  # Import the random module
+import random
 
 load_dotenv()
 
@@ -14,16 +14,23 @@ consumer_secret = os.getenv("CONSUMER_SECRET")
 access_token = os.getenv("ACCESS_TOKEN")
 access_token_secret = os.getenv("ACCESS_TOKEN_SECRET")
 
+# Check if any of the API credentials are missing
+if not all([consumer_key, consumer_secret, access_token, access_token_secret]):
+    raise ValueError("One or more Twitter API credentials are missing. Please check your .env file.")
+else:
+    print("Twitter API credentials found.")
+
 client = tweepy.Client(
     consumer_key=consumer_key, consumer_secret=consumer_secret,
     access_token=access_token, access_token_secret=access_token_secret
 )
+print("Twitter client initialized.")
 
 # API endpoint for block information
 block_api_url = 'https://sp-api.dappnode.io/memory/allblocks'
 
-# Initialize last_posted_tweet with an empty string
-last_posted_tweet = ''
+last_posted_tweet = None
+last_posted_block = None 
 
 def get_block_message(block):
     slot = block['slot']
@@ -55,7 +62,7 @@ def get_block_message(block):
         return None
 
 def post_tweet():
-    global last_posted_tweet
+    global last_posted_tweet, last_posted_block 
 
     # Get the latest 6 block information
     response = requests.get(block_api_url)
@@ -65,32 +72,42 @@ def post_tweet():
 
     # Iterate over the latest 6 blocks
     for block in latest_blocks:
+        block_number = block['block']
+
+        # Check if the current block is the same as the last posted block
+        if block_number == last_posted_block:
+            print(f"Skipping tweet (block {block_number} already posted)")
+            continue
+
         tweet_message = get_block_message(block)
 
-        # Check if tweet_message is not None and if it's different from the last posted tweet
-        if tweet_message is not None and tweet_message.strip() != last_posted_tweet.strip():
-            # Post the tweet with backoff and retry
+        # Check if tweet_message is not None
+        if tweet_message is not None:
             try:
                 response = client.create_tweet(
                     text=tweet_message
                 )
                 print(f"Tweet posted successfully! Tweet URL: https://twitter.com/user/status/{response.data['id']}")
-                print(f"Block Number: {block['block']}\nSlot: {block['slot']}\nBlock_type: {block['block_type']}")
-                # Update the last posted tweet
+                print(f"Block Number: {block_number}\nSlot: {block['slot']}\nBlock_type: {block['block_type']}")
                 last_posted_tweet = tweet_message
+                last_posted_block = block_number
                 print(f"Last Posted Tweet Updated: {last_posted_tweet}")
             except tweepy.errors.Forbidden as e:
                 print(f"An error occurred: {e}")
             except tweepy.errors.TooManyRequests as e:
                 print(f"Rate limit exceeded. Waiting and retrying...")
-                time.sleep(60)  # Wait for 60 seconds before retrying
+                time.sleep(60)
+            except Exception as e:
+                print(f"An unexpected error occurred: {e}")
         else:
             print("Skipping tweet (duplicate content)")
 
 # Schedule the tweet to run every minute
 schedule.every(1).minutes.do(post_tweet)
+print("Tweet scheduler set up.")
 
 # Run the scheduler
 while True:
     schedule.run_pending()
     time.sleep(1)
+    print("Script is running...")
