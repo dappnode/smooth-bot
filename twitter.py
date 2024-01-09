@@ -112,9 +112,9 @@ def post_tweet(api_url, message_type):
     else:
         print(f"Skipping {message_type} tweet (duplicate content)")
 
-# Schedule the tweet to run every minute
-schedule.every(1).minutes.do(post_tweet, api_url=block_api_url, message_type='block')
-schedule.every(1).minutes.do(post_tweet, api_url=donation_api_url, message_type='donation')
+# Schedule the tweet to run every two hours
+schedule.every(2).hours.do(post_tweet, api_url=block_api_url, message_type='block')
+schedule.every(2).hours.do(post_tweet, api_url=donation_api_url, message_type='donation')
 print("Tweet scheduler set up.")
 
 # Run the scheduler
