@@ -62,8 +62,11 @@ def get_block_message(block):
         print(f"Skipping tweet for block {block_number} (missing reward)")
         return None
 
+# Store the IDs of the last posted tweets
+last_posted_tweet_ids = set()
+
 def post_tweet(api_url):
-    global last_posted_tweet, last_posted_block 
+    global last_posted_tweet, last_posted_block, last_posted_tweet_ids
 
     # Get the latest block information
     response = requests.get(api_url)
@@ -79,7 +82,7 @@ def post_tweet(api_url):
 
     tweet_message = get_block_message(latest_block)
     
-    # Print the tweet_message and last_posted_tweet for debugging
+     # Print the tweet_message and last_posted_tweet for debugging
     print(f"Tweet Message: {tweet_message}")
     print(f"Last Posted Tweet: {last_posted_tweet}")
 
@@ -89,10 +92,14 @@ def post_tweet(api_url):
             response = client.create_tweet(
                 text=tweet_message
             )
-            print(f"Tweet posted successfully! Tweet URL: https://twitter.com/user/status/{response.data['id']}")
+            tweet_id = response.data['id']
+            print(f"Tweet posted successfully! Tweet URL: https://twitter.com/user/status/{tweet_id}")
             print(f"Block Number: {block_number}\nSlot: {latest_block['slot']}\nBlock_type: {latest_block['block_type']}")
+
+            # Update last posted information
             last_posted_tweet = tweet_message
             last_posted_block = block_number
+            last_posted_tweet_ids.add(tweet_id)
             print(f"Last Posted Tweet Updated: {last_posted_tweet}")
         except tweepy.errors.Forbidden as e:
             print(f"An error occurred: {e}")
@@ -104,9 +111,9 @@ def post_tweet(api_url):
     else:
         print("Skipping tweet (duplicate content)")
 
-# Schedule the tweet to run every two hours only if there are new blocks
-schedule.every(2).hours.do(lambda: post_tweet(proposed_blocks_api_url))
-schedule.every(2).hours.do(lambda: post_tweet(wrong_fee_blocks_api_url))
+# Schedule the tweet to run every four hours only if there are new blocks
+schedule.every(6).hours.do(lambda: post_tweet(proposed_blocks_api_url))
+schedule.every(6).hours.do(lambda: post_tweet(wrong_fee_blocks_api_url))
 print("Tweet scheduler set up.")
 
 # Run the scheduler
