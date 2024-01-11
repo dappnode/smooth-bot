@@ -103,6 +103,7 @@ def tweet_new_block(block_data):
         f"💰 NEW BLOCK IN SMOOTH 💰\n\n" 
         f"Reward: {reward_eth:.4f} ETH {party_emoji}\n\n" 
         f"{phrase}\n" 
+        f"Proposer validator index: {block_data['validator_index']}\n" 
         f"{slot_url}"
     )
     try:
