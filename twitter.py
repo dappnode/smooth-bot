@@ -35,6 +35,21 @@ wrong_fee_blocks_url = "https://sp-api.dappnode.io/memory/wrongfeeblocks"
 last_proposed_block = 0
 last_wrong_fee_block = 0
 
+last_twit_index = 0
+
+def get_next_item(items, last_index):
+    next_index = (last_index + 1) % len(items)
+    return items[next_index], next_index
+
+happy_emojis = ["🥳", "😊", "😄"]
+sad_emojis = ["😔", "😞", "😢"]
+
+smooth_operator_phrases = [
+    "From a ☁️ Smooth Operator 😏",
+    "Courtesy of a 🌤️ Smooth Operator 🤗",
+    "Brought to you by a 🌬️ Smooth Operator 😎",
+]
+
 def save_last_block(endpoint, block_number):
     data = {}
     try:
@@ -78,33 +93,36 @@ def shorten_address(address):
     return address[:6] + '...' + address[-4:]
 
 def tweet_new_block(block_data):
+    global last_twit_index
     reward_eth = w3.from_wei(int(block_data['reward_wei']), 'ether')
-    party_emoji = " 🥳🎉" if reward_eth > 0.1 else ""
+    party_emoji, last_twit_index = get_next_item(happy_emojis, last_twit_index) if reward_eth > 0.1 else ""
+    phrase, last_twit_index = get_next_item(smooth_operator_phrases, last_twit_index)
     slot_url = f"https://beaconcha.in/slot/{block_data['slot']}"
     
     tweet = (
         f"💰 NEW BLOCK IN SMOOTH 💰\n\n" 
-        f"Reward: {reward_eth:.4f} ETH{party_emoji}\n\n" 
-        f"From a ☁️ Smooth Operator 😏\n" 
+        f"Reward: {reward_eth:.4f} ETH {party_emoji}\n\n" 
+        f"{phrase}\n" 
         f"{slot_url}"
     )
     try:
         client.create_tweet(text=tweet)
-        logging.info(f"Successfully tweeted wrong fee block: {tweet}")
+        logging.info(f"Successfully tweeted new proposed block: {tweet}")
     except tweepy.TweepyException as e:
-        logging.error(f"Error while tweeting wrong fee block: {e}")
+        logging.error(f"Error while tweeting new wrong fee block: {e}")
 
 
 def tweet_wrong_fee_block(block_data):
+    global last_twit_index
     amount_eth = w3.from_wei(int(block_data['reward_wei']), 'ether')
     shortened_address = shorten_address(block_data['withdrawal_address'])
-    party_emoji = " 🥳🎉" if amount_eth > 0.1 else ""
+    sad_emoji, last_twit_index = get_next_item(sad_emojis, last_twit_index)
     slot_url = f"https://beaconcha.in/slot/{block_data['slot']}"
 
     tweet = (
         f"⛔ BANNED FROM SMOOTH ⛔\n\n" 
-        f"{shortened_address} has been banned\n"
-        f"For sending {amount_eth:.4f} ETH out of the pool{party_emoji}\n\n"
+        f"{shortened_address} has been banned {sad_emoji}\n"
+        f"For sending {amount_eth:.4f} ETH out of the pool\n"
         f"{slot_url}"
     )
     try:
