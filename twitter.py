@@ -7,6 +7,8 @@ from dotenv import load_dotenv
 import json
 import logging
 
+LAST_BLOCKS_FILE = 'data/last_blocks.json'
+
 load_dotenv()
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
@@ -36,7 +38,7 @@ last_wrong_fee_block = 0
 def save_last_block(endpoint, block_number):
     data = {}
     try:
-        with open('last_blocks.json', 'r') as file:
+        with open(LAST_BLOCKS_FILE, 'r') as file:
             data = json.load(file)
     except (FileNotFoundError, json.JSONDecodeError):
         logging.warning("Could not load the last block data file; starting fresh.")
@@ -44,13 +46,13 @@ def save_last_block(endpoint, block_number):
 
     data[endpoint] = block_number
 
-    with open('last_blocks.json', 'w') as file:
+    with open(LAST_BLOCKS_FILE, 'w') as file:
         json.dump(data, file)
     logging.info(f"Saved last block for {endpoint}: {block_number}")
 
 def load_last_block(endpoint):
     try:
-        with open('last_blocks.json', 'r') as file:
+        with open(LAST_BLOCKS_FILE, 'r') as file:
             data = json.load(file)
             logging.info(f"Successfully Loaded last block for {endpoint}: {data.get(endpoint, 0)}")
             return data.get(endpoint, 0)
