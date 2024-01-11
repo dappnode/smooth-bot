@@ -21,4 +21,4 @@ COPY --from=builder /usr/local/lib/python3.8/site-packages /usr/local/lib/python
 COPY twitter.py .
 
 # Run twitter.py when the container launches
-CMD ["python", "twitter.py"]
+CMD ["python3", "twitter.py"]
