@@ -12,3 +12,5 @@ services:
       ACCESS_TOKEN_SECRET: ""
       BEARER_TOKEN: ""
     restart: always
+    volumes:
+      - ./data:/app/data
