@@ -5,12 +5,8 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    environment:
-      CONSUMER_KEY: ""
-      CONSUMER_SECRET: ""
-      ACCESS_TOKEN: ""
-      ACCESS_TOKEN_SECRET: ""
-      BEARER_TOKEN: ""
+    env_file:
+      - .env
     restart: always
     volumes:
       - ./data:/app/data
