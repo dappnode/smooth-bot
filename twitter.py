@@ -111,9 +111,11 @@ def post_tweet(api_url):
     else:
         print("Skipping tweet (duplicate content)")
 
-# Schedule the tweet to run every four hours only if there are new blocks
-schedule.every(6).hours.do(lambda: post_tweet(proposed_blocks_api_url))
-schedule.every(12).hours.do(lambda: post_tweet(wrong_fee_blocks_api_url))
+# Schedule the tweet to run every 12 hours
+schedule.every(12).hours.do(lambda: post_tweet(proposed_blocks_api_url))
+# Schedule the tweet to run every 24 hours
+schedule.every(24).hours.do(lambda: post_tweet(wrong_fee_blocks_api_url))
+
 print("Tweet scheduler set up.")
 
 # Run the scheduler
