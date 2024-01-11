@@ -2,6 +2,7 @@ env.sh
 .idea
 .pdbrc
 tweepy.egg-info
+last_blocks.json
 
 # Created by https://www.gitignore.io/api/vim,python
 
