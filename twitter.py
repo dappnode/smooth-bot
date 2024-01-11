@@ -63,11 +63,14 @@ def get_block_message(block):
         return None
 
 # Store the IDs of the last posted tweets
-last_posted_tweet_ids = set()
+last_posted_tweet_ids_proposed = set()
+last_posted_tweet_ids_wrong_fee = set()
 
-def post_tweet(api_url):
-    global last_posted_tweet, last_posted_block, last_posted_tweet_ids
+# Separate variables for the last posted tweet for each endpoint
+last_posted_tweet_proposed = None
+last_posted_tweet_wrong_fee = None
 
+def post_tweet(api_url, last_posted_tweet, last_posted_block, last_posted_tweet_ids_set):
     # Get the latest block information
     response = requests.get(api_url)
     blocks = response.json()
@@ -75,10 +78,13 @@ def post_tweet(api_url):
 
     block_number = latest_block['block']
 
-    # Check if the current block is the same as the last posted block
-    if block_number == last_posted_block:
+    # Print the block number for debugging
+    print(f"Processing block number: {block_number}")
+
+    # Check if the current block is the same as the last posted block for the specific endpoint
+    if block_number == last_posted_block and block_number in last_posted_tweet_ids_set:
         print(f"Skipping tweet (block {block_number} already posted)")
-        return
+        return last_posted_tweet, last_posted_block
 
     tweet_message = get_block_message(latest_block)
     
@@ -86,7 +92,7 @@ def post_tweet(api_url):
     print(f"Tweet Message: {tweet_message}")
     print(f"Last Posted Tweet: {last_posted_tweet}")
 
-    # Check if the tweet_message is not None and is different from the last posted tweet
+    # Check if the tweet_message is not None and is different from the last posted tweet for the specific endpoint
     if tweet_message is not None and tweet_message != last_posted_tweet:
         try:
             response = client.create_tweet(
@@ -96,30 +102,34 @@ def post_tweet(api_url):
             print(f"Tweet posted successfully! Tweet URL: https://twitter.com/user/status/{tweet_id}")
             print(f"Block Number: {block_number}\nSlot: {latest_block['slot']}\nBlock_type: {latest_block['block_type']}")
 
-            # Update last posted information
+            # Update last posted information for the specific endpoint
             last_posted_tweet = tweet_message
             last_posted_block = block_number
-            last_posted_tweet_ids.add(tweet_id)
+            last_posted_tweet_ids_set.add(tweet_id)
             print(f"Last Posted Tweet Updated: {last_posted_tweet}")
+
+            return last_posted_tweet, last_posted_block
         except tweepy.errors.Forbidden as e:
             print(f"An error occurred: {e}")
-        except tweepy.errors.TooManyRequests as e:
-            print(f"Rate limit exceeded. Waiting and retrying...")
-            time.sleep(60)
-        except Exception as e:
-            print(f"An unexpected error occurred: {e}")
     else:
         print("Skipping tweet (duplicate content)")
 
-# Schedule the tweet to run every 12 hours
-schedule.every(12).hours.do(lambda: post_tweet(proposed_blocks_api_url))
-# Schedule the tweet to run every 24 hours
-schedule.every(24).hours.do(lambda: post_tweet(wrong_fee_blocks_api_url))
+    return last_posted_tweet, last_posted_block
+
+# Schedule the tweet for proposed_blocks_api_url every 5 minutes
+schedule.every(5).minutes.do(
+    lambda: post_tweet(proposed_blocks_api_url, last_posted_tweet_proposed, last_posted_block, last_posted_tweet_ids_proposed)
+)
+
+# Schedule the tweet for wrong_fee_blocks_api_url every 7 minutes
+schedule.every(7).minutes.do(
+    lambda: post_tweet(wrong_fee_blocks_api_url, last_posted_tweet_wrong_fee, last_posted_block, last_posted_tweet_ids_wrong_fee)
+)
 
 print("Tweet scheduler set up.")
 
 # Run the scheduler
 while True:
     schedule.run_pending()
-    time.sleep(1)
+    time.sleep(10) 
     print("Script is running...")
