@@ -35,6 +35,7 @@ wrong_fee_blocks_url = "https://sp-api.dappnode.io/memory/wrongfeeblocks"
 last_proposed_block = 0
 last_wrong_fee_block = 0
 
+# This  should be saved to data too
 last_twit_index = 0
 
 def get_next_item(items, last_index):
@@ -44,10 +45,22 @@ def get_next_item(items, last_index):
 happy_emojis = ["🥳", "😊", "😄"]
 sad_emojis = ["😔", "😞", "😢"]
 
-smooth_operator_phrases = [
+happy_phrases = [
     "From a ☁️ Smooth Operator 😏",
     "Courtesy of a 🌤️ Smooth Operator 🤗",
     "Brought to you by a 🌬️ Smooth Operator 😎",
+]
+
+sad_phrases = [
+    "Unfortunately, ",
+    "Regrettably, ",
+    "Sadly, ",
+]
+
+check_block_phrases = [
+    "More info at:",
+    "Link to the slot:",
+    "Check the slot here:",
 ]
 
 def save_last_block(endpoint, block_number):
@@ -96,14 +109,16 @@ def tweet_new_block(block_data):
     global last_twit_index
     reward_eth = w3.from_wei(int(block_data['reward_wei']), 'ether')
     party_emoji, last_twit_index = get_next_item(happy_emojis, last_twit_index) if reward_eth > 0.1 else ""
-    phrase, last_twit_index = get_next_item(smooth_operator_phrases, last_twit_index)
+    phrase, last_twit_index = get_next_item(happy_phrases, last_twit_index)
+    ending, last_twit_index = get_next_item(check_block_phrases, last_twit_index - 1)
     slot_url = f"https://beaconcha.in/slot/{block_data['slot']}"
     
     tweet = (
         f"💰 NEW BLOCK IN SMOOTH 💰\n\n" 
         f"Reward: {reward_eth:.4f} ETH {party_emoji}\n\n" 
         f"{phrase}\n" 
-        f"Proposer validator index: {block_data['validator_index']}\n" 
+        f"Proposer Validator Index: {block_data['validator_index']}\n\n" 
+        f"{ending}"
         f"{slot_url}"
     )
     try:
@@ -118,12 +133,14 @@ def tweet_wrong_fee_block(block_data):
     amount_eth = w3.from_wei(int(block_data['reward_wei']), 'ether')
     shortened_address = shorten_address(block_data['withdrawal_address'])
     sad_emoji, last_twit_index = get_next_item(sad_emojis, last_twit_index)
+    sad_phrase, last_twit_index = get_next_item(sad_phrases, last_twit_index - 1)
+    ending, last_twit_index = get_next_item(check_block_phrases, last_twit_index - 2)
     slot_url = f"https://beaconcha.in/slot/{block_data['slot']}"
 
     tweet = (
         f"⛔ BANNED FROM SMOOTH ⛔\n\n" 
-        f"{shortened_address} has been banned {sad_emoji}\n"
-        f"For sending {amount_eth:.4f} ETH out of the pool\n"
+        f"{sad_emoji} {sad_phrase}validator {shortened_address} has been banned for sending {amount_eth:.4f} ETH out of the pool {sad_emoji} \n\n"
+        f"{ending}"
         f"{slot_url}"
     )
     try:
