@@ -38,10 +38,6 @@ last_wrong_fee_block = 0
 # This  should be saved to data too
 last_twit_index = 0
 
-def get_next_item(items, last_index):
-    next_index = (last_index + 1) % len(items)
-    return items[next_index], next_index
-
 happy_emojis = ["🥳", "😊", "😄"]
 sad_emojis = ["😔", "😞", "😢"]
 
@@ -108,18 +104,23 @@ def shorten_address(address):
 def tweet_new_block(block_data):
     global last_twit_index
     reward_eth = w3.from_wei(int(block_data['reward_wei']), 'ether')
-    party_emoji, last_twit_index = get_next_item(happy_emojis, last_twit_index) if reward_eth > 0.1 else ""
-    phrase, last_twit_index = get_next_item(happy_phrases, last_twit_index)
-    ending, last_twit_index = get_next_item(check_block_phrases, last_twit_index - 1)
+
+    # Local index variables for this function call
+    local_emoji_index = last_twit_index
+    local_phrase_index = last_twit_index
+    local_ending_index = last_twit_index
+
+    party_emoji = happy_emojis[local_emoji_index] if reward_eth > 0.1 else ""
+    phrase = happy_phrases[local_phrase_index]
+    ending = check_block_phrases[local_ending_index]
     slot_url = f"https://beaconcha.in/slot/{block_data['slot']}"
-    
+
     tweet = (
         f"💰 NEW BLOCK IN SMOOTH 💰\n\n" 
         f"Reward: {reward_eth:.4f} ETH {party_emoji}\n\n" 
         f"{phrase}\n" 
         f"Proposer Validator Index: {block_data['validator_index']}\n\n" 
-        f"{ending}"
-        f"{slot_url}"
+        f"{ending} {slot_url}"
     )
     try:
         client.create_tweet(text=tweet)
@@ -127,27 +128,38 @@ def tweet_new_block(block_data):
     except tweepy.TweepyException as e:
         logging.error(f"Error while tweeting new wrong fee block: {e}")
 
+    # Increment global index at the end of the function
+    last_twit_index = (last_twit_index + 1) % len(happy_emojis) # Assuming all lists are the same length
 
 def tweet_wrong_fee_block(block_data):
     global last_twit_index
     amount_eth = w3.from_wei(int(block_data['reward_wei']), 'ether')
     shortened_address = shorten_address(block_data['withdrawal_address'])
-    sad_emoji, last_twit_index = get_next_item(sad_emojis, last_twit_index)
-    sad_phrase, last_twit_index = get_next_item(sad_phrases, last_twit_index - 1)
-    ending, last_twit_index = get_next_item(check_block_phrases, last_twit_index - 2)
+
+    # Local index variables for this function call
+    local_emoji_index = last_twit_index
+    local_phrase_index = last_twit_index
+    local_ending_index = last_twit_index
+
+    sad_emoji = sad_emojis[local_emoji_index]
+    sad_phrase = sad_phrases[local_phrase_index]
+    ending = check_block_phrases[local_ending_index]
     slot_url = f"https://beaconcha.in/slot/{block_data['slot']}"
 
     tweet = (
         f"⛔ BANNED FROM SMOOTH ⛔\n\n" 
         f"{sad_emoji} {sad_phrase}validator {shortened_address} has been banned for sending {amount_eth:.4f} ETH out of the pool {sad_emoji} \n\n"
-        f"{ending}"
-        f"{slot_url}"
+        f"{ending} {slot_url}"
     )
     try:
         client.create_tweet(text=tweet)
         logging.info(f"Successfully tweeted new block: {tweet}")
     except tweepy.TweepyException as e:
         logging.error(f"Error while tweeting new block: {e}")
+
+    # Increment global index at the end of the function
+    last_twit_index = (last_twit_index + 1) % len(sad_emojis) # Assuming all lists are the same length
+
 
 while True:
     # Fetching data from proposed blocks
