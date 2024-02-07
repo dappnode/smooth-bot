@@ -30,6 +30,7 @@ w3 = Web3()
 # Endpoints
 proposed_blocks_url = "https://sp-api.dappnode.io/memory/proposedblocks"
 wrong_fee_blocks_url = "https://sp-api.dappnode.io/memory/wrongfeeblocks"
+donations_blocks_url = "https://sp-api.dappnode.io/memory/donations"
 
 # By default, latest block twitted is 0
 last_proposed_block = 0
@@ -160,6 +161,28 @@ def tweet_wrong_fee_block(block_data):
     # Increment global index at the end of the function
     last_twit_index = (last_twit_index + 1) % len(sad_emojis) # Assuming all lists are the same length
 
+def fetch_donations_data(url):
+    try:
+        response = requests.get(url, timeout=10)
+        response.raise_for_status()
+        return response.json()
+    except requests.RequestException as e:
+        logging.error(f"Network error occurred when calling the Donations API: {e}")
+        return None
+
+def tweet_new_donation(donation_data):
+    amount_eth = w3.from_wei(int(donation_data['amount_wei']), 'ether')
+    donor_address = donation_data['donor_address']
+    tweet = f"🎉 New Donation! 🎉\n\n" \
+            f"Amount: {amount_eth:.4f} ETH\n" \
+            f"Donor: {donor_address}\n\n" \
+            f"Thank you for your support! 🙏"
+
+    try:
+        client.create_tweet(text=tweet)
+        logging.info(f"Successfully tweeted new donation: {tweet}")
+    except tweepy.TweepyException as e:
+        logging.error(f"Error while tweeting new donation: {e}")
 
 while True:
     # Fetching data from proposed blocks
@@ -183,6 +206,16 @@ while True:
             save_last_block('wrong_fee_blocks', last_wrong_fee_block)
     except Exception as e:
         logging.error(f"Error while processing wrong fee blocks: {e}")
+
+    # Fetching data from donation blocks
+    try:
+        logging.info("Fetching donation data from API.")
+        donations_data = fetch_donations_data(donations_blocks_url)
+        if donations_data:
+            latest_donation = donations_data[-1]
+            tweet_new_donation(latest_donation)
+    except Exception as e:
+        logging.error(f"Error while processing donations data: {e}")
 
     # Wait before next iteration
     logging.info("Waiting for next update cycle.")
