@@ -248,13 +248,14 @@ while True:
     # Fetching data from donation blocks
     try:
         logging.info("Fetching donation data from API.")
-        donation_block = fetch_donations_data(donations_blocks_url)
-        if donation_block:
+        donations_block = fetch_donations_data(donations_blocks_url) 
+        if donations_block:
             last_donation_block = load_last_donation_block()  # Load the last donation block number
-            latest_donation = donation_block[-1]
+            latest_donation = donations_block[-1]
             if latest_donation['block'] != last_donation_block:
                 tweet_new_donation(latest_donation)
-                save_last_donation_block(latest_donation['block'])  # Save the last donation block number
+                if latest_donation['block'] > last_donation_block:  # Check for duplicates
+                    save_last_donation_block(latest_donation['block'])  # Save the last donation block number
     except Exception as e:
         logging.error(f"Error while processing donations data: {e}")
 
