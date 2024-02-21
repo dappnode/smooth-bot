@@ -3,6 +3,7 @@ env.sh
 .pdbrc
 tweepy.egg-info
 last_blocks.json
+last_donation_block.json
 
 # Created by https://www.gitignore.io/api/vim,python
 
