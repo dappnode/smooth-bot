@@ -6,8 +6,10 @@ import tweepy
 from dotenv import load_dotenv
 import json
 import logging
+import random 
 
 LAST_BLOCKS_FILE = 'data/last_blocks.json'
+DONATION_BLOCKS_FILE = 'data/last_donation_block.json'
 
 load_dotenv()
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -84,10 +86,33 @@ def load_last_block(endpoint):
     except (FileNotFoundError, json.JSONDecodeError):
         logging.warning("Failed to load last block data, defaulting to 0.")
         return 0
+    
+def save_last_donation_block(block_number):
+    """Save the last donation block number to the donation blocks file."""
+    try:
+        with open(DONATION_BLOCKS_FILE, 'w') as file:
+            json.dump({'last_donation_block': block_number}, file)
+        logging.info(f"Saved last donation block: {block_number}")
+    except Exception as e:
+        logging.error(f"Error saving last donation block: {e}")
+
+def load_last_donation_block():
+    """Load the last donation block number from the donation blocks file."""
+    try:
+        with open(DONATION_BLOCKS_FILE, 'r') as file:
+            data = json.load(file)
+            last_donation_block = data.get('last_donation_block', 0)
+            logging.info(f"Successfully Loaded last donation block: {last_donation_block}")
+            return last_donation_block
+    except (FileNotFoundError, json.JSONDecodeError):
+        logging.warning("Failed to load last donation block data, defaulting to 0.")
+        return 0
 
 # Load last blocks
 last_proposed_block = load_last_block('proposed_blocks')
 last_wrong_fee_block = load_last_block('wrong_fee_blocks')
+# Load last donation block
+last_donation_block = load_last_donation_block('donation_block')
 
 def fetch_data(url):
     try:
@@ -170,13 +195,26 @@ def fetch_donations_data(url):
         logging.error(f"Network error occurred when calling the Donations API: {e}")
         return None
 
-def tweet_new_donation(donation_data):
-    amount_eth = w3.from_wei(int(donation_data['amount_wei']), 'ether')
-    donor_address = donation_data['donor_address']
-    tweet = f"🎉 New Donation! 🎉\n\n" \
-            f"Amount: {amount_eth:.4f} ETH\n" \
-            f"Donor: {donor_address}\n\n" \
-            f"Thank you for your support! 🙏"
+def tweet_new_donation(donation_block):
+    amount_wei = int(donation_block['amount_wei'])
+    amount_eth = w3.from_wei(amount_wei, 'ether')
+    donor_address = donation_block['sender']
+    transaction_url = f"https://prater.beaconcha.in/tx/{donation_block['tx_hash']}"
+
+    # Determine the number of happy emojis based on the donation amount
+    extra_emojis = ""
+    if amount_wei >= 1000000000000000000:  # 1 ETH in Wei
+        extra_emojis = " 🥳🚀🎉🌟"  # Add more happy emojis for larger donations
+
+    # Different tweet variations
+    tweet_variations = [
+        f"🎉 New Donation! 🎉\n\nAmount: {amount_eth:.4f} ETH\nDonor: {donor_address}\n\nThank you for your support! 🙏{extra_emojis}\n\nTransaction URL: {transaction_url}",
+        f"🎁 We received a new donation! 🎁\n\nAmount: {amount_eth:.4f} ETH\nDonor: {donor_address}\n\nYour generosity is greatly appreciated! 😊{extra_emojis}\n\nTransaction URL: {transaction_url}",
+        f"🌟 Thank you for your contribution! 🌟\n\nAmount: {amount_eth:.4f} ETH\nDonor: {donor_address}\n\nWe're grateful for your support! 🙌{extra_emojis}\n\nTransaction URL: {transaction_url}"
+    ]
+
+    # Choose a random tweet variation
+    tweet = random.choice(tweet_variations)
 
     try:
         client.create_tweet(text=tweet)
@@ -210,10 +248,13 @@ while True:
     # Fetching data from donation blocks
     try:
         logging.info("Fetching donation data from API.")
-        donations_data = fetch_donations_data(donations_blocks_url)
-        if donations_data:
-            latest_donation = donations_data[-1]
-            tweet_new_donation(latest_donation)
+        donation_block = fetch_donations_data(donations_blocks_url)
+        if donation_block:
+            last_donation_block = load_last_donation_block()  # Load the last donation block number
+            latest_donation = donation_block[-1]
+            if latest_donation['block'] != last_donation_block:
+                tweet_new_donation(latest_donation)
+                save_last_donation_block(latest_donation['block'])  # Save the last donation block number
     except Exception as e:
         logging.error(f"Error while processing donations data: {e}")
 
