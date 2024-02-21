@@ -112,7 +112,7 @@ def load_last_donation_block():
 last_proposed_block = load_last_block('proposed_blocks')
 last_wrong_fee_block = load_last_block('wrong_fee_blocks')
 # Load last donation block
-last_donation_block = load_last_donation_block('donation_block')
+last_donation_block = load_last_donation_block()
 
 def fetch_data(url):
     try:
@@ -204,7 +204,7 @@ def tweet_new_donation(donation_block):
     # Determine the number of happy emojis based on the donation amount
     extra_emojis = ""
     if amount_wei >= 1000000000000000000:  # 1 ETH in Wei
-        extra_emojis = " 🥳🚀🎉🌟"  # Add more happy emojis for larger donations
+        extra_emojis = " 🥳🚀🎉🌟"  
 
     # Different tweet variations
     tweet_variations = [
@@ -250,14 +250,13 @@ while True:
         logging.info("Fetching donation data from API.")
         donations_block = fetch_donations_data(donations_blocks_url) 
         if donations_block:
-            last_donation_block = load_last_donation_block()  # Load the last donation block number
             latest_donation = donations_block[-1]
-            if latest_donation['block'] != last_donation_block:
+            last_donation_block = latest_donation['block_number']  
+            if last_donation_block != load_last_donation_block():  
                 tweet_new_donation(latest_donation)
-                if latest_donation['block'] > last_donation_block:  # Check for duplicates
-                    save_last_donation_block(latest_donation['block'])  # Save the last donation block number
+                save_last_donation_block(last_donation_block)  
     except Exception as e:
-        logging.error(f"Error while processing donations data: {e}")
+            logging.error(f"Error while processing donations data: {e}")
 
     # Wait before next iteration
     logging.info("Waiting for next update cycle.")
