@@ -197,9 +197,13 @@ def fetch_donations_data(url):
 
 def tweet_new_donation(donation_block):
     amount_wei = int(donation_block['amount_wei'])
+    if amount_wei < 100000000000000000:  # Check if donation is less than 0.1 ETH
+        logging.info("Donation amount is less than 0.1 ETH. Skipping tweet.")
+        return  # Exit the function and do not tweet
+    
     amount_eth = w3.from_wei(amount_wei, 'ether')
     donor_address = donation_block['sender']
-    transaction_url = f"https://prater.beaconcha.in/tx/{donation_block['tx_hash']}"
+    transaction_url = f"https://beaconcha.in/tx/{donation_block['tx_hash']}"
 
     # Determine the number of happy emojis based on the donation amount
     extra_emojis = ""
